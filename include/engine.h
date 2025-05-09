@@ -3,18 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   engine.h                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zelhajou <zelhajou@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: beddinao <zelhajou@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 06:08:10 by beddinao          #+#    #+#             */
-/*   Updated: 2024/05/10 09:22:13 by beddinao         ###   ########.fr       */
+/*   Updated: 2025/05/09 08:53:48 by beddinao         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ENGINE_H
 # define ENGINE_H
+
 # include <time.h>
-# include "../lib/MLX42/include/MLX42/MLX42.h"
-# include "cub3d.h"
+# include	<MLX42.h> 
+# include <cub3d.h>
 
 # define MAX_WIN_W 1350
 # define MIN_WIN_W 500

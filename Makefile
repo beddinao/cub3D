@@ -1,62 +1,45 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: zelhajou <zelhajou@student.1337.ma>        +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2024/04/20 13:21:00 by zelhajou          #+#    #+#              #
-#    Updated: 2024/05/10 11:33:58 by zelhajou         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
-NAME = cub3d
 CC = cc
-CFLAGS = -Wall -Wextra -Werror #-g -fsanitize=address
 SRCDIR = ./src
-OBJDIR = ./obj
+OBJDIR = ./build
 LIBDIR_GNL = ./lib/get_next_line
 LIBDIR_LIBFT = ./lib/libft
-LIBMLX = ./lib/MLX42
-INCLUDES = -I./includes -I./lib/get_next_line -I./lib/libft -I./lib/MLX42/include
-MLX42_FLAGS = -framework Cocoa -framework IOKit $(LIBMLX)/build/libmlx42.a -Iinclude -lglfw -L $(shell brew --prefix glfw)/lib
+LIBDIR_MLX = ./lib/MLX42
+HR = $(wildcard include/*.h)
 
-SRCS = $(SRCDIR)/main.c \
-	   $(SRCDIR)/parsing/config/config_parsing.c \
-	   $(SRCDIR)/parsing/config/config_validation.c \
-	   $(SRCDIR)/parsing/texture/texture_parsing.c \
-	   $(SRCDIR)/parsing/texture/texture_validation.c \
-       $(SRCDIR)/parsing/color/color_parsing.c \
-	   $(SRCDIR)/parsing/color/color_validation.c \
-	   $(SRCDIR)/parsing/map/map_parsing.c \
-	   $(SRCDIR)/parsing/map/map_validation.c \
-	   $(SRCDIR)/parsing/map/map_validation2.c \
-	   $(SRCDIR)/rendering/drawing.c \
-	   $(SRCDIR)/rendering/hooks.c \
-	   $(SRCDIR)/rendering/movement.c \
-	   $(SRCDIR)/rendering/raycasting_engine.c \
-	   $(SRCDIR)/rendering/raycasting_init.c \
-	   $(SRCDIR)/rendering/rendering.c \
-	   $(SRCDIR)/utils/config_utils.c \
-	   $(SRCDIR)/utils/error_utils.c \
-	   $(SRCDIR)/utils/rendering_utils.c \
-	   $(SRCDIR)/utils/rendering_utils2.c \
-	   $(LIBDIR_GNL)/get_next_line.c \
-	   $(LIBDIR_GNL)/get_next_line_utils.c \
+SRCS = $(foreach dir, $(SRCDIR) $(SRCDIR)/* $(SRCDIR)/*/*, $(wildcard $(dir)/*.c)) \
+       $(wildcard $(LIBDIR_GNL)/*.c)
 
-OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+OBJS = $(patsubst $(SRCDIR)/%, $(OBJDIR)/%, $(SRCS:.c=.o))
+OBJS := $(patsubst $(LIBDIR_GNL)/%, $(OBJDIR)/get_next_line/%, $(OBJS))
+
+CFLAGS = -Iinclude -I$(LIBDIR_GNL) -I$(LIBDIR_LIBFT) -I$(LIBDIR_MLX)/include/MLX42
+LDFLAGS = -Llib -L$(LIBDIR_LIBFT) $(LIBDIR_MLX)/build/libmlx42.a
+UNAME = $(shell uname)
+NAME = cub3d
+
+ifeq ($(UNAME), Linux)
+	LDFLAGS += -lglfw -ldl -pthread -lm
+endif
+ifeq ($(UNAME), Darwin)
+	LDFLAGS += -lglfw -L$(shell brew --prefix glfw)/lib -framework Cocoa -framework IOKit 
+endif
 
 all: libmlx $(NAME)
 
 libmlx:
-	cmake $(LIBMLX) -B $(LIBMLX)/build && make -C $(LIBMLX)/build -j4
+	cmake -B $(LIBDIR_MLX)/build $(LIBDIR_MLX) -DCMAKE_CXX_COMPILER="g++"
+	cmake --build $(LIBDIR_MLX)/build
 
-$(NAME): $(OBJS) libft ./includes/cub3d.h ./includes/engine.h
-	$(CC) $(MLX42_FLAGS) $(CFLAGS) $(OBJS) -L$(LIBDIR_LIBFT) -lft -o $(NAME)
+$(NAME): $(OBJS)
+	$(CC) -o $(NAME) $(OBJS) $(LDFLAGS) -lft
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c ./includes/cub3d.h ./includes/engine.h
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+$(OBJDIR)/%.o: $(SRCDIR)/%.c $(HR) | libft
+	@mkdir -p $(dir $@)
+	$(CC) -c $< -o $@ $(CFLAGS)
+
+$(OBJDIR)/get_next_line/%.o: $(LIBDIR_GNL)/%.c $(HR) | libft
+	@mkdir -p $(dir $@)
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 libft:
 	@make -C $(LIBDIR_LIBFT)
@@ -64,12 +47,13 @@ libft:
 clean:
 	rm -rf $(OBJDIR)
 	@make -C $(LIBDIR_LIBFT) clean
-	rm -rf $(LIBMLX)/build
 
 fclean: clean
-	rm -f $(NAME)
 	@make -C $(LIBDIR_LIBFT) fclean
+	rm -rf $(LIBDIR_MLX)/build
+	rm -rf $(NAME)
 
 re: fclean all
 
-.PHONY: all clean fclean re libft
+.PHONY: all libmlx libft clean fclean re
+
